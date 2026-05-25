@@ -1,0 +1,14 @@
+data:
+  path: /data
+  target_column: 'label'
+  test_size: 0.2
+
+model:
+  model_name: 'ruBert-tiny'
+  num_classes: 2
+
+training:
+  seed: 42
+  batch_size: 32
+  num_epochs: 3
+  learning_rate: 2e-5
