@@ -1,0 +1,39 @@
+name: ml
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+  - numpy
+  - scipy
+  - pandas
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pyarrow
+  - pytorch
+  - torchvision
+  - torchaudio
+  - pip
+  - jupyterlab
+  - ipykernel
+  - git
+
+  - pip:
+    - transformers
+    - datasets
+    - tokenizers
+    - safetensors
+    - huggingface_hub
+    - mlflow
+    - wandb
+    - pydantic
+    - python-dotenv
+    - httpx
+    - pytest
+    - black
+    - ruff
+    - pre-commit
+    - tqdm
+    - rich
