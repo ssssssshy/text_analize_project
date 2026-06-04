@@ -1,4 +1,3 @@
-from src.config_schema import AppConfig
 from src.utils import load_config
 
 
