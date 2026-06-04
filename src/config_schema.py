@@ -19,6 +19,14 @@ class ModelLogisticRegressionConfig(BaseModel):
     random_state: int
 
 
+class ModelSimpleTransformerConfig(BaseModel):
+    d_model: int
+    nhead: int
+    num_layers: int
+    num_classes: int
+    vocab_size: int
+
+
 class ModelTfidfConfig(BaseModel):
     max_features: int
     stop_words: str
@@ -37,3 +45,4 @@ class AppConfig(BaseModel):
     training: TrainingConfig
     tfidf: ModelTfidfConfig
     logistic_regression: ModelLogisticRegressionConfig
+    model_params: ModelSimpleTransformerConfig
