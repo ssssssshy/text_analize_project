@@ -1,6 +1,8 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from typing import Tuple
+
+import torch
 from src.utils import load_config
 from torch.utils.data.dataset import Dataset
 
@@ -34,19 +36,26 @@ def load_data(
 
 
 class TextDataset(Dataset):
-    """Custom Dataset for text data.
-    Args:
-        texts (pd.DataFrame): The input text data.
-        labels (pd.Series): The target labels.
-    """
-
-    def __init__(self, texts: pd.DataFrame, labels: pd.Series):
-        super().__init__()
+    def __init__(self, texts, labels, tokenizer):
         self.texts = texts
         self.labels = labels
+        self.tokenizer = tokenizer
 
     def __len__(self):
         return len(self.texts)
 
     def __getitem__(self, idx):
-        return self.texts.iloc[idx], self.labels.iloc[idx]
+        text = self.texts[idx]
+        label = self.labels[idx]
+        encoding = self.tokenizer(
+            text,
+            truncation=True,
+            padding="max_length",
+            max_length=512,
+            return_tensors="pt",
+        )
+        return {
+            "input_ids": encoding["input_ids"].squeeze(),
+            "attention_mask": encoding["attention_mask"].squeeze(),
+            "labels": torch.tensor(label, dtype=torch.long),
+        }

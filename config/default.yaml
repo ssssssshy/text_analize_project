@@ -15,7 +15,7 @@ tfidf:
   stop_words: 'russian'
 
 model:
-  model_name: 'ruBert-tiny'
+  model_name: 'cointegrated/rubert-tiny2'
   num_classes: 2
 
 training:
