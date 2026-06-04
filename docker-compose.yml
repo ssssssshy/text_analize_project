@@ -1,0 +1,11 @@
+services:
+  train:
+    build: .
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./mlruns:/app/mlruns
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python src/train_bert.py

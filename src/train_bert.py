@@ -128,6 +128,7 @@ def train_bert():
         log_bert_model(
             transformers_model={"model": model, "tokenizer": tokenizer},
             artifact_path="bert_model",
+            task="text-classification",
         )
 
         save_dir = "models/bert_sequence_classification"
