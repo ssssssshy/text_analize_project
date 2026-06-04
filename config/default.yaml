@@ -3,6 +3,17 @@ data:
   target_column: 'toxic'
   test_size: 0.2
 
+
+logistic_regression:
+  C: 1.0
+  max_iter: 1000
+  random_state: 42
+  class_weight: 'balanced'
+
+tfidf:
+  max_features: 5000
+  stop_words: 'russian'
+
 model:
   model_name: 'ruBert-tiny'
   num_classes: 2
