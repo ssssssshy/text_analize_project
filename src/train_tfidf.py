@@ -11,6 +11,17 @@ import joblib
 
 
 def train_tfidf():
+    """
+    Train TF IDF + Logistic Regression model and log parameters, metrics, and artifacts to MLflow.
+        - Load configuration from YAML file.
+        - Load and split the dataset.
+        - Preprocess text data using TF-IDF vectorization.
+        - Train a Logistic Regression model.
+        - Evaluate the model and log the F1 score.
+        - Save the trained model and vectorizer as artifacts in MLflow.
+    Returns:
+        None
+    """
     cfg = load_config("config/default.yaml")
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(

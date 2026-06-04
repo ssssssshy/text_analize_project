@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from typing import Tuple
 from src.utils import load_config
+from torch.utils.data.dataset import Dataset
 
 
 def load_data(
@@ -30,3 +31,22 @@ def load_data(
     )
 
     return X_train, X_val, X_test, y_train, y_val, y_test
+
+
+class TextDataset(Dataset):
+    """Custom Dataset for text data.
+    Args:
+        texts (pd.DataFrame): The input text data.
+        labels (pd.Series): The target labels.
+    """
+
+    def __init__(self, texts: pd.DataFrame, labels: pd.Series):
+        super().__init__()
+        self.texts = texts
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        return self.texts.iloc[idx], self.labels.iloc[idx]
