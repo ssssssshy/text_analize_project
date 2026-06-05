@@ -51,7 +51,6 @@ def train_bert():
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.learning_rate))
 
-    # 5. MLflow Эксперимент
     mlflow.set_experiment("BERT_Sequence_Classification")
     with mlflow.start_run():
         mlflow.log_param("model_name", cfg.model.model_name)
@@ -68,7 +67,6 @@ def train_bert():
                 train_loader,
                 desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Train]",
             ):
-                # Переносим каждый батч на GPU/CPU вслед за моделью
                 input_ids = batch["input_ids"].to(device)
                 attention_mask = batch["attention_mask"].to(device)
                 labels = batch["labels"].to(device)

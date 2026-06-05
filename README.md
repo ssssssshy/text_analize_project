@@ -39,9 +39,9 @@ See `requirements.txt` for the full dependency list.
    ```
 4. Configure the project by modifying `config/default.yaml`.
 5. Run training scripts:
-   - For TF-IDF: `python src/train_tfidf.py`
-   - For BERT: `python src/train_bert.py`
-   - For Custom Model: `python src/train_mymodel.py`
+   - For TF-IDF: `python -m src.train_tfidf`
+   - For BERT: `python -m src.train_bert`
+   - For Custom Model: `python -m src.train_mymodel`
 
 ## Usage
 
