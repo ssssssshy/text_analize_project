@@ -35,7 +35,7 @@ Follow these steps to clone the repository, restore the pre-trained models via G
 Make sure you have **Git LFS** installed before cloning, so that the heavy model binaries are downloaded automatically:
 ```bash
 git lfs install
-git clone [https://github.com/ssssssshy/text_analize_project.git](https://github.com/ssssssshy/text_analize_project.git)
+git clone https://github.com/ssssssshy/text_analize_project.git
 cd text_analize_project
 git lfs pull
 
