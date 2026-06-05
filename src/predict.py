@@ -39,5 +39,5 @@ if __name__ == "__main__":
     print(f"Текст: {sample_text}")
 
     label, conf = predict(sample_text)
-    print(f"Предсказанный класс: {label}, 0-негативный, 1-позитивный")
+    print(f"Предсказанный класс: {label}, 1-негативный, 0-позитивный")
     print(f"Уверенность: {conf:.4f}")
