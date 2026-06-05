@@ -8,9 +8,12 @@ import torch
 from src.model.mymodel import SimpleTransformerClassifier
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import warnings
-from sklearn.exceptions import InconsistentVersionWarning
+import sklearn.exceptions
 
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+warnings.filterwarnings(
+    "ignore",
+    category=sklearn.exceptions.InconsistentVersionWarning,  # type: ignore
+)
 
 
 def predict_bert(text, model_path):
