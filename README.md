@@ -59,7 +59,8 @@ conda env create -f environment.yml
 2. **Activate the environment:**
 ```bash
 # Using Mamba (Recommended)
-mamba activate <environment_name>
+mamba activate ml
+(Note: By default, the environment is named ml as specified in the environment.yml file).
 # Alternatively, using standard Conda
 conda activate <environment_name>
 
