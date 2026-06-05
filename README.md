@@ -23,19 +23,18 @@ The project uses a variety of machine learning libraries including:
 - MLflow (for experiment tracking)
 - FastAPI (for serving)
 
-See `requirements.txt` for the full dependency list.
+Environment dependencies are managed via Conda. See `environment.yml` for the full list.
 
 ## Setup
 
 1. Clone the repository.
-2. Create a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+2. Create and activate the Conda environment using the `environment.yml` file:
+```bash
+   # Create the environment from the configuration file
+   conda env create -f environment.yml
+
+   # Activate the newly created environment
+   conda activate <environment_name>
    ```
 4. Configure the project by modifying `config/default.yaml`.
 5. Run training scripts:
