@@ -45,4 +45,4 @@ class AppConfig(BaseModel):
     training: TrainingConfig
     tfidf: ModelTfidfConfig
     logistic_regression: ModelLogisticRegressionConfig
-    model_params: ModelSimpleTransformerConfig
+    my_model_params: ModelSimpleTransformerConfig

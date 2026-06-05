@@ -1,15 +1,19 @@
 import torch
 import torch.nn as nn
 
+from src.utils import load_config
+
 
 class SimpleTransformerClassifier(nn.Module):
+    cfg = load_config("config/default.yaml")
+
     def __init__(
         self,
         vocab_size: int,
-        d_model: int = 128,
-        nhead: int = 4,
-        num_layers: int = 2,
-        num_classes: int = 2,
+        d_model: int = cfg.my_model_params.d_model,
+        nhead: int = cfg.my_model_params.nhead,
+        num_layers: int = cfg.my_model_params.num_layers,
+        num_classes: int = cfg.my_model_params.num_classes,
     ):
         super().__init__()
 

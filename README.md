@@ -82,7 +82,14 @@ Before running any scripts, adjust the parameters, data paths, and model selecti
 To test the pre-trained models without re-running the training pipelines, use the `src/predict.py` script to run inference on new data:
 
 ```bash
-python -m src.predict
+# 1. Тестируем BERT
+python -m src.predict --model bert --text "Прекрасный день для обучения нейросетей"
+
+# 2. Тестируем твой Кастомный Трансформер
+python -m src.predict --model custom --text "Какой-то подозрительный и грубый текст."
+
+# 3. Тестируем классический МЛ (TF-IDF)
+python -m src.predict --model tfidf --text "Обычное предложение без негатива."
 
 ```
 
