@@ -13,10 +13,15 @@ __pycache__/
 # Data & Models
 data/raw/
 data/processed/
-models/
 mlruns/
 mlflow.db
 .trash/
+
+# Игнорируем только тяжелые бинарники в моделях, если они ВДРУГ не попали в LFS
+# (на всякий случай, чтобы случайно не запушить 500МБ в обычный Git)
+*.safetensors
+*.pth
+*.joblib
 
 # Notebooks and OS artifacts
 .ipynb_checkpoints/
