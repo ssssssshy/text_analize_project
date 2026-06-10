@@ -1,13 +1,13 @@
+import mlflow
 import torch
 import torch.optim as optim
+import tqdm
+from mlflow.transformers import log_model as log_bert_model
+from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import mlflow
-import tqdm
-from sklearn.metrics import f1_score
-from mlflow.transformers import log_model as log_bert_model
 
-from src.dataset import load_data, TextDataset
+from src.dataset import TextDataset, load_data
 from src.utils import load_config
 
 
@@ -25,7 +25,11 @@ def train_bert():
     """
     cfg = load_config("config/default.yaml")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = (
+        torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
+        if torch.accelerator.is_available()
+        else "cpu"
+    )
     print(f"Используется устройство для обучения: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)

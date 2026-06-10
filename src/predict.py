@@ -1,14 +1,14 @@
 import argparse
 import os
 import sys
-import joblib
-import torch
-
-# Импортируем твой класс кастомной модели
-from src.model.mymodel import SimpleTransformerClassifier
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import warnings
+
+import joblib
 import sklearn.exceptions
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+from src.model.mymodel import SimpleTransformerClassifier
 
 warnings.filterwarnings(
     "ignore",
@@ -17,7 +17,11 @@ warnings.filterwarnings(
 
 
 def predict_bert(text, model_path):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = (
+        torch.accelerator.current_accelerator().type
+        if torch.accelerator.is_available()
+        else "cpu"
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
@@ -39,28 +43,26 @@ def predict_bert(text, model_path):
 
 
 def predict_custom_transformer(text, model_path):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = (
+        torch.accelerator.current_accelerator().type
+        if torch.accelerator.is_available()
+        else "cpu"
+    )
 
-    # Загружаем токенизатор, который лежит в папке с кастомной моделью
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    # Инициализируем модель, передавая размер словаря из токенизатора.
-    # Остальные параметры (d_model, nhead и др.) подтягиваются автоматом из default.yaml
     model = SimpleTransformerClassifier(vocab_size=tokenizer.vocab_size)
 
-    # Загружаем веса
     weights_path = os.path.join(model_path, "model_weights.pth")
     model.load_state_dict(torch.load(weights_path, map_location=device))
     model.to(device)
     model.eval()
 
-    # Токенизируем текст
     inputs = tokenizer(
         text, return_tensors="pt", truncation=True, padding=True, max_length=128
     )
     input_ids = inputs["input_ids"].to(device)
 
-    # Предсказание
     with torch.no_grad():
         logits = model(input_ids)
         probs = torch.softmax(logits, dim=1)
@@ -77,7 +79,6 @@ def predict_tfidf(text, model_path):
     vectorizer = joblib.load(vectorizer_path)
     model = joblib.load(model_path_joblib)
 
-    # Преобразование текста и предсказание
     text_vectorized = vectorizer.transform([text])
     pred_class = int(model.predict(text_vectorized)[0])
 
@@ -107,7 +108,6 @@ def main():
     )
     args = parser.parse_args()
 
-    # Пути к папкам, которые мы настроили в Git LFS
     paths = {
         "bert": "models/bert_sequence_classification",
         "custom": "models/custom_transformer_classification",

@@ -1,16 +1,17 @@
 import os
+
+import mlflow
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
+from mlflow.pytorch import log_model
+from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
-import mlflow
-import tqdm
-from sklearn.metrics import f1_score
-from mlflow.pytorch import log_model
 
+from src.dataset import TextDataset, load_data
 from src.model.mymodel import SimpleTransformerClassifier
-from src.dataset import load_data, TextDataset
 from src.utils import load_config
 
 
@@ -22,17 +23,21 @@ def train_my_model():
     """
     cfg = load_config("config/default.yaml")
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = (
+        torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
+        if torch.accelerator.is_available()
+        else "cpu"
+    )
     print(f"Используется устройство для обучения: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
 
     model = SimpleTransformerClassifier(
         vocab_size=tokenizer.vocab_size,
-        d_model=cfg.model_params.d_model,
-        nhead=cfg.model_params.nhead,
-        num_layers=cfg.model_params.num_layers,
-        num_classes=cfg.model_params.num_classes,
+        d_model=cfg.my_model_params.d_model,
+        nhead=cfg.my_model_params.nhead,
+        num_layers=cfg.my_model_params.num_layers,
+        num_classes=cfg.my_model_params.num_classes,
     )
     model.to(device)
 
