@@ -75,9 +75,9 @@ def train_mymodelv2():
                 val_loader,
                 desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Validation]",
             ):
-                input_ids = batch["input_ids"].to_device()
-                attention_mask = batch["attention_mask"].to_device()
-                labels = batch["labels"].to_device()
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                labels = batch["labels"].to(device)
 
                 logits = model(input_ids, attention_mask)
                 loss = criterion(logits, labels)
