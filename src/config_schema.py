@@ -20,11 +20,9 @@ class ModelLogisticRegressionConfig(BaseModel):
 
 
 class ModelSimpleTransformerConfig(BaseModel):
-    d_model: int
-    nhead: int
-    num_layers: int
-    num_classes: int
-    vocab_size: int
+    in_size: int
+    hidden_size: int
+    out_size: int
 
 
 class ModelTfidfConfig(BaseModel):
@@ -39,6 +37,13 @@ class TrainingConfig(BaseModel):
     learning_rate: float
 
 
+class mymodelv2_params(BaseModel):
+    embedding_dim: int
+    num_heads: int
+    num_layers: int
+    num_classes: int
+
+
 class AppConfig(BaseModel):
     data: Config
     model: ModelConfig
@@ -46,3 +51,4 @@ class AppConfig(BaseModel):
     tfidf: ModelTfidfConfig
     logistic_regression: ModelLogisticRegressionConfig
     my_model_params: ModelSimpleTransformerConfig
+    mymodelv2_params: mymodelv2_params

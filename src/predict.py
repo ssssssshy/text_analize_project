@@ -18,7 +18,7 @@ warnings.filterwarnings(
 
 def predict_bert(text, model_path):
     device = (
-        torch.accelerator.current_accelerator().type
+        torch.accelerator.current_accelerator().type  # type: ignore
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -44,7 +44,7 @@ def predict_bert(text, model_path):
 
 def predict_custom_transformer(text, model_path):
     device = (
-        torch.accelerator.current_accelerator().type
+        torch.accelerator.current_accelerator().type  # type: ignore
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -82,7 +82,6 @@ def predict_tfidf(text, model_path):
     text_vectorized = vectorizer.transform([text])
     pred_class = int(model.predict(text_vectorized)[0])
 
-    # Получаем вероятности классов
     probs = model.predict_proba(text_vectorized)[0]
     confidence = float(probs[pred_class])
 
