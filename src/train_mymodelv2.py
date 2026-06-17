@@ -23,10 +23,10 @@ def train_mymodelv2():
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
 
     train_dataset = TextDataset(
-        X_train[cfg.data.target_column].tolist(), y_train.tolist(), tokenizer
+        X_train[cfg.data.text_column].tolist(), y_train.tolist(), tokenizer
     )
     val_dataset = TextDataset(
-        X_val[cfg.data.target_column].tolist(), y_val.tolist(), tokenizer
+        X_val[cfg.data.text_column].tolist(), y_val.tolist(), tokenizer
     )
 
     train_loader = DataLoader(

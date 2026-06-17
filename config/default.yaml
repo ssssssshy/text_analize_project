@@ -1,6 +1,7 @@
 data:
-  path: /data
+  path: data/processed/labeled.csv
   target_column: 'toxic'
+  text_column: 'comment'
   test_size: 0.2
 
 
