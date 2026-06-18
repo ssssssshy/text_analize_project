@@ -7,29 +7,30 @@ cfg = load_config()
 
 
 class MyModelV2(nn.Module):
-    def __init__(self, tokenizer):
+    def __init__(self, vocab_size, embedding_dim, num_heads, num_layers, num_classes):
         super(MyModelV2, self).__init__()
 
         self.embedding = nn.Embedding(
-            num_embeddings=tokenizer.vocab_size,
-            embedding_dim=cfg.mymodelv2_params.embedding_dim,
+            num_embeddings=vocab_size,
+            embedding_dim=embedding_dim,
         )
 
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=cfg.mymodelv2_params.embedding_dim,
-            nhead=cfg.mymodelv2_params.num_heads,
-            dim_feedforward=cfg.mymodelv2_params.embedding_dim * 4,
+            d_model=embedding_dim,
+            nhead=num_heads,
+            dim_feedforward=embedding_dim * 4,
             activation="gelu",
             batch_first=True,
+            norm_first=True,
         )
 
         self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer, num_layers=cfg.mymodelv2_params.num_layers
+            encoder_layer, num_layers=num_layers
         )
 
         self.fc = nn.Linear(
-            cfg.mymodelv2_params.embedding_dim,
-            out_features=cfg.mymodelv2_params.num_classes,
+            embedding_dim,
+            out_features=num_classes,
         )
 
     def forward(self, x, attention_mask=None):

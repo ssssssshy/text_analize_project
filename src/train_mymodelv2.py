@@ -34,7 +34,13 @@ def train_mymodelv2():
     )
     val_loader = DataLoader(val_dataset, batch_size=cfg.training.batch_size)
 
-    model = MyModelV2(tokenizer)
+    model = MyModelV2(
+        vocab_size=tokenizer.vocab_size,
+        embedding_dim=cfg.mymodelv2_params.embedding_dim,
+        num_heads=cfg.mymodelv2_params.num_heads,
+        num_layers=cfg.mymodelv2_params.num_layers,
+        num_classes=cfg.mymodelv2_params.num_classes,
+    )
 
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
@@ -42,7 +48,7 @@ def train_mymodelv2():
     model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.training.learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.learning_rate)
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -105,7 +111,13 @@ def train_mymodelv2():
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)
 
-    torch.save(model.state_dict(), os.path.join(save_dir, "model_weights.pth"))
+    # Сохраняем "чистые" веса, даже если использовали параллелизм
+    if isinstance(model, torch.nn.DataParallel):
+        torch.save(
+            model.module.state_dict(), os.path.join(save_dir, "model_weights.pth")
+        )
+    else:
+        torch.save(model.state_dict(), os.path.join(save_dir, "model_weights.pth"))
     tokenizer.save_pretrained(save_dir)
     print(f"\n Обучение завершено! Модель сохранена в: {save_dir}")
 
