@@ -21,9 +21,10 @@ class ModelLogisticRegressionConfig(BaseModel):
 
 
 class ModelSimpleTransformerConfig(BaseModel):
-    in_size: int
-    hidden_size: int
-    out_size: int
+    d_model: int
+    nhead: int
+    num_layers: int
+    num_classes: int
 
 
 class ModelTfidfConfig(BaseModel):

@@ -35,6 +35,10 @@ def train_mymodelv2():
     val_loader = DataLoader(val_dataset, batch_size=cfg.training.batch_size)
 
     model = MyModelV2(tokenizer)
+
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
+
     model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()

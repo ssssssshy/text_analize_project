@@ -9,6 +9,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.model.mymodel import SimpleTransformerClassifier
+from src.model.mymodelv2 import MyModelV2
 
 warnings.filterwarnings(
     "ignore",
@@ -16,55 +17,66 @@ warnings.filterwarnings(
 )
 
 
-def predict_bert(text, model_path):
+def predict_mymodelv2(text, model_path):
+
     device = (
-        torch.accelerator.current_accelerator().type  # type: ignore
+        torch.accelerator.current_accelerator.type()
         if torch.accelerator.is_available()
         else "cpu"
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForSequenceClassification.from_pretrained(model_path)
+
+    model = MyModelV2(tokenizer=tokenizer)
+
+    weight_path = os.path.join(model_path, "models/custom_modelv2/model_weight.pth")
+    model.load_state_dict(torch.load(weight_path, map_location=device))
     model.to(device)
     model.eval()
 
     inputs = tokenizer(
         text, return_tensors="pt", truncation=True, padding=True, max_length=128
     )
-    inputs = {k: v.to(device) for k, v in inputs.items()}
+
+    input_ids = inputs["input_ids"].to(device)
+    attention_mask = inputs["attention_mask"].to(device)
 
     with torch.no_grad():
-        outputs = model(**inputs)
-        probs = torch.softmax(outputs.logits, dim=1)
+        logits = model(input_ids, attention_mask=attention_mask)
+
+        probs = torch.softmax(logits, dim=1)
+
         pred_class = int(torch.argmax(probs, dim=1).item())
         confidence = probs[0][pred_class].item()
-
     return pred_class, confidence
 
 
-def predict_custom_transformer(text, model_path):
+def predict_mymodel(text, model_path):
     device = (
-        torch.accelerator.current_accelerator().type  # type: ignore
+        torch.accelerator.current_accelerator.type()
         if torch.accelerator.is_available()
         else "cpu"
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-    model = SimpleTransformerClassifier(vocab_size=tokenizer.vocab_size)
-
-    weights_path = os.path.join(model_path, "model_weights.pth")
-    model.load_state_dict(torch.load(weights_path, map_location=device))
+    model = SimpleTransformerClassifier(tokenizer)
+    weigth_path = os.path.join(
+        model_path, "models/custom_transformers_classification/model_weight.pth"
+    )
+    model.load_state_dict(torch.load(weigth_path, map_location=device))
     model.to(device)
     model.eval()
 
     inputs = tokenizer(
         text, return_tensors="pt", truncation=True, padding=True, max_length=128
     )
+
     input_ids = inputs["input_ids"].to(device)
+    attention_mask = inputs["attention_mask"].to(device)
 
     with torch.no_grad():
-        logits = model(input_ids)
+        logits = model(input_ids, attention_mask=attention_mask)
         probs = torch.softmax(logits, dim=1)
         pred_class = int(torch.argmax(probs, dim=1).item())
         confidence = probs[0][pred_class].item()
@@ -72,68 +84,17 @@ def predict_custom_transformer(text, model_path):
     return pred_class, confidence
 
 
-def predict_tfidf(text, model_path):
-    vectorizer_path = os.path.join(model_path, "tfidf_vectorizer.joblib")
-    model_path_joblib = os.path.join(model_path, "tfidf_logistic_model.joblib")
-
-    vectorizer = joblib.load(vectorizer_path)
-    model = joblib.load(model_path_joblib)
-
-    text_vectorized = vectorizer.transform([text])
-    pred_class = int(model.predict(text_vectorized)[0])
-
-    probs = model.predict_proba(text_vectorized)[0]
-    confidence = float(probs[pred_class])
-
-    return pred_class, confidence
-
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="Inference script for Text Analysis Project"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="bert",
-        choices=["bert", "custom", "tfidf"],
-        help="Type of model to use for prediction (default: bert)",
-    )
-    parser.add_argument(
-        "--text",
-        type=str,
-        default="Немного глупый текст для теста модели",
-        help="Text to analyze",
-    )
-    args = parser.parse_args()
+    model_path = "./models"
+    text = "Очень плохой фильм"
 
-    paths = {
-        "bert": "models/bert_sequence_classification",
-        "custom": "models/custom_transformer_classification",
-        "tfidf": "models/TF IDF",
-    }
+    print("Тестируем MyModelV2")
+    res_class, confidence = predict_mymodelv2(text, model_path)
+    print(f"Результат V2: Класс {res_class}, Уверенность: {confidence:.4f}")
 
-    model_path = paths[args.model]
-
-    if not os.path.exists(model_path):
-        print(f"Ошибка: Директория {model_path} не найдена. Проверь 'git lfs pull'.")
-        sys.exit(1)
-
-    print(f"Используемая модель: {args.model.upper()}")
-    print(f"Текст для анализа: '{args.text}'\n---")
-
-    if args.model == "bert":
-        label, conf = predict_bert(args.text, model_path)
-    elif args.model == "custom":
-        label, conf = predict_custom_transformer(args.text, model_path)
-    elif args.model == "tfidf":
-        label, conf = predict_tfidf(args.text, model_path)
-    else:
-        raise ValueError("Unknown model type")
-
-    print("Результат проверки:")
-    print(f"Предсказанный класс: {label} (1 — негативный, 0 — позитивный)")
-    print(f"Уверенность модели: {conf:.4f}")
+    print("Тестируем MyModel")
+    res_class, confidence = predict_mymodel(text, model_path)
+    print(f"Результат V1: Класс {res_class}, Уверенность: {confidence:.4f}")
 
 
 if __name__ == "__main__":
