@@ -111,7 +111,6 @@ def train_mymodelv2():
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)
 
-    # Сохраняем "чистые" веса, даже если использовали параллелизм
     if isinstance(model, torch.nn.DataParallel):
         torch.save(
             model.module.state_dict(), os.path.join(save_dir, "model_weights.pth")
@@ -119,7 +118,7 @@ def train_mymodelv2():
     else:
         torch.save(model.state_dict(), os.path.join(save_dir, "model_weights.pth"))
     tokenizer.save_pretrained(save_dir)
-    print(f"\n Обучение завершено! Модель сохранена в: {save_dir}")
+    print(f"\n Обучение завершено Модель сохранена в: {save_dir}")
 
 
 if __name__ == "__main__":
