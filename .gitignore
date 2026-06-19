@@ -34,3 +34,5 @@ htmlcov/
 
 # Logs
 *.log
+
+error_analyze.ipynb
