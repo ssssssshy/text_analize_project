@@ -7,6 +7,8 @@ from transformers import AutoTokenizer
 import tqdm
 import os
 from sklearn.metrics import f1_score
+from error_analyze import error_analzyze
+import pandas as pd
 
 
 def train_mymodelv2():
@@ -79,6 +81,7 @@ def train_mymodelv2():
         val_loss = 0
         all_preds = []
         all_labels = []
+        all_probs = []
 
         with torch.no_grad():
             for batch in tqdm.tqdm(
@@ -93,10 +96,14 @@ def train_mymodelv2():
                 loss = criterion(logits, labels)
                 val_loss += loss.item()
 
+                probs = torch.softmax(logits, dim=1)
+                class_1_probs = probs[:, 1]
+
                 preds = torch.argmax(logits, dim=1)
 
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
+                all_probs.extend(class_1_probs.cpu().numpy())
 
         avg_val_loss = val_loss / len(val_loader)
         print(
@@ -107,6 +114,12 @@ def train_mymodelv2():
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+
+        val_text = X_val[cfg.data.text_column].tolist()
+
+        errors = error_analzyze(val_text, all_labels, all_preds, all_probs)
+        df_errors = pd.DataFrame(errors)
+        df_errors.to_csv(f"data/errors/errors_epoch_{epoch + 1}.csv", index=False)
 
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)
