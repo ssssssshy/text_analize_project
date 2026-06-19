@@ -36,3 +36,4 @@ htmlcov/
 *.log
 
 error_analyze.ipynb
+mlruns/
