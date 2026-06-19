@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 import tqdm
 import os
 from sklearn.metrics import f1_score
-from error_analyze import error_analzyze
+from src.error_analyze import error_analzyze
 import pandas as pd
 
 
