@@ -62,7 +62,6 @@ def train_bert():
         mode="min",
         factor=0.2,
         patience=2,
-        verbose=True,  # type: ignore
     )
 
     save_dir = "models/rubert_tiny2"

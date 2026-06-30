@@ -64,7 +64,6 @@ def train_mymodelv2():
         mode="min",
         factor=0.2,
         patience=2,
-        verbose=True,  # type: ignore
     )
 
     save_dir = "models/mymodelv2_classification"
