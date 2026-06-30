@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
 from src.model.mymodelv2 import MyModelV2
-from src.utils import load_config, set_seed
+from src.utils import load_config, set_seed, EarlyStopping
 from src.dataset import load_data, TextDataset
 
 
@@ -24,7 +24,9 @@ def train_mymodelv2():
 
     set_seed(cfg.training.seed)
 
-    wandb.init(project="tat", name="mymodelv2-classification", config=dict(cfg))
+    wandb.init(
+        project="tat", name="mymodelv2-classification-with-only-es", config=dict(cfg)
+    )
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(cfg.data.path)
 
@@ -57,6 +59,7 @@ def train_mymodelv2():
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.mymodel_lr)
+    early_stopping = EarlyStopping(patience=3)
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -130,6 +133,12 @@ def train_mymodelv2():
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+        early_stopping(avg_val_loss)
+        if early_stopping.early_stop:
+            print(
+                f"🛑 Ранняя остановка сработала на эпохе {epoch + 1}! Прерываем обучение."
+            )
+            break
 
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)

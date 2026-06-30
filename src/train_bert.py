@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.dataset import TextDataset, load_data
-from src.utils import load_config, set_seed
+from src.utils import load_config, set_seed, EarlyStopping
 
 
 def train_bert():
@@ -28,7 +28,11 @@ def train_bert():
 
     set_seed(cfg.training.seed)
 
-    wandb.init(project="tat", name="bert-sequence-classification", config=dict(cfg))
+    wandb.init(
+        project="tat",
+        name="bert-sequence-classification-with-only-es",
+        config=dict(cfg),
+    )
 
     device = (
         torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
@@ -59,6 +63,7 @@ def train_bert():
         model = torch.nn.DataParallel(model)
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
+    early_stopping = EarlyStopping(patience=3)
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -131,17 +136,15 @@ def train_bert():
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+        early_stopping(avg_val_loss, model)
+        if early_stopping.early_stop:
+            print(f"ES на эпохе {epoch + 1}")
+            break
 
     save_dir = "models/rubert_tiny2"
-    os.makedirs(save_dir, exist_ok=True)
-
-    if isinstance(model, torch.nn.DataParallel):
-        model.module.save_pretrained(save_dir)
-    else:
-        model.save_pretrained(save_dir)
 
     tokenizer.save_pretrained(save_dir)
-    print(f"Модель и токенизатор успешно сохранены в: {save_dir}")
+    print(f"tokenizer successfully saved in {save_dir}")
 
     wandb.finish()
 
