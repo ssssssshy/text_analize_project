@@ -11,7 +11,6 @@ from transformers import AutoTokenizer
 from src.model.mymodelv2 import MyModelV2
 from src.utils import load_config
 from src.dataset import load_data, TextDataset
-from src.error_analyze import error_analzyze
 
 
 def train_mymodelv2():
@@ -129,12 +128,6 @@ def train_mymodelv2():
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
-
-        val_text = X_val[cfg.data.text_column].tolist()
-
-        errors = error_analzyze(val_text, all_labels, all_preds, all_probs)
-        df_errors = pd.DataFrame(errors)
-        df_errors.to_csv(f"logs/errors_epoch_{epoch + 1}.csv", index=False)
 
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)
