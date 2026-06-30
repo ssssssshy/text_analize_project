@@ -6,6 +6,7 @@ import tqdm
 import wandb
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.dataset import TextDataset, load_data
@@ -22,12 +23,12 @@ def train_bert():
 
     wandb.init(
         project="tat",
-        name="bert-sequence-classification-with-only-es",
+        name="bert-sequence-classification-with-es-lrsh",
         config=dict(cfg),
     )
 
     device = (
-        torch.accelerator.current_accelerator().type
+        torch.accelerator.current_accelerator().type  # type: ignore
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -55,6 +56,14 @@ def train_bert():
         model = torch.nn.DataParallel(model)
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
+
+    scheduler = ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        factor=0.2,
+        patience=2,
+        verbose=True,  # type: ignore
+    )
 
     save_dir = "models/rubert_tiny2"
     early_stopping = EarlyStopping(
@@ -133,6 +142,11 @@ def train_bert():
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+
+        scheduler.step(avg_val_loss)
+
+        current_lr = optimizer.param_groups[0]["lr"]
+        wandb.log({"learning_rate": current_lr, "epoch": epoch})
 
         early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:
