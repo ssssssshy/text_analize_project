@@ -14,7 +14,7 @@ __pycache__/
 data/raw/
 data/processed/
 mlruns/
-mlflow.db
+
 .trash/
 
 # Игнорируем только тяжелые бинарники в моделях, если они ВДРУГ не попали в LFS

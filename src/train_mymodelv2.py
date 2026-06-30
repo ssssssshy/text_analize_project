@@ -1,14 +1,16 @@
+import os
+import wandb
+import tqdm
+import torch
+import pandas as pd
+from sklearn.metrics import f1_score
+from torch.utils.data import DataLoader
+from transformers import AutoTokenizer
+
 from src.model.mymodelv2 import MyModelV2
 from src.utils import load_config
 from src.dataset import load_data, TextDataset
-from torch.utils.data import DataLoader
-import torch
-from transformers import AutoTokenizer
-import tqdm
-import os
-from sklearn.metrics import f1_score
 from src.error_analyze import error_analzyze
-import pandas as pd
 
 
 def train_mymodelv2():
@@ -19,6 +21,8 @@ def train_mymodelv2():
     )
 
     cfg = load_config("config/default.yaml")
+    
+    wandb.init(project="mymodelv2-classification", config=dict(cfg))
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(cfg.data.path)
 
@@ -73,6 +77,7 @@ def train_mymodelv2():
             optimizer.zero_grad()
 
         avg_train_loss = train_loss / len(train_loader)
+        wandb.log({"train_loss": avg_train_loss, "epoch": epoch})
         print(
             f"Epoch {epoch + 1}/{cfg.training.num_epochs} - Train Loss: {avg_train_loss:.4f}"
         )
@@ -106,11 +111,12 @@ def train_mymodelv2():
                 all_probs.extend(class_1_probs.cpu().numpy())
 
         avg_val_loss = val_loss / len(val_loader)
+        val_f1 = f1_score(all_labels, all_preds, average="weighted")
+        wandb.log({"val_loss": avg_val_loss, "val_f1_score": val_f1, "epoch": epoch})
         print(
             f"Epoch {epoch + 1}/{cfg.training.num_epochs} - Validation Loss: {avg_val_loss:.4f}"
         )
 
-        val_f1 = f1_score(all_labels, all_preds, average="weighted")
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
@@ -132,6 +138,7 @@ def train_mymodelv2():
         torch.save(model.state_dict(), os.path.join(save_dir, "model_weights.pth"))
     tokenizer.save_pretrained(save_dir)
     print(f"\n Обучение завершено Модель сохранена в: {save_dir}")
+    wandb.finish()
 
 
 if __name__ == "__main__":

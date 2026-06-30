@@ -17,7 +17,7 @@ cfg = load_config("config/default.yaml")
 
 def predict_mymodelv2(text, model_path):
     device = (
-        torch.accelerator.current_accelerator.type()
+        torch.accelerator.current_accelerator().type  # type: ignore
         if torch.accelerator.is_available()
         else "cpu"
     )

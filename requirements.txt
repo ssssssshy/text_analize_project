@@ -105,9 +105,6 @@ matplotlib-inline @ file:///home/conda/feedstock_root/build_artifacts/matplotlib
 mdit-py-plugins==0.6.1
 mdurl==0.1.2
 mistune @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_mistune_1777824616/work
-mlflow==3.12.0
-mlflow-skinny==3.12.0
-mlflow-tracing==3.12.0
 mpmath @ file:///home/conda/feedstock_root/build_artifacts/mpmath_1733302684489/work
 multidict==6.7.1
 multiprocess==0.70.19

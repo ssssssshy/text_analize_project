@@ -26,7 +26,6 @@ dependencies:
     - tokenizers
     - safetensors
     - huggingface_hub
-    - mlflow
     - wandb
     - pydantic
     - python-dotenv

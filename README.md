@@ -22,7 +22,7 @@ This project provides a framework for training and evaluating text analysis mode
 The project utilizes a comprehensive machine learning stack:
 - PyTorch & Hugging Face Transformers
 - scikit-learn
-- MLflow (for experiment tracking)
+- Weights & Biases (for experiment tracking)
 
 ---
 
