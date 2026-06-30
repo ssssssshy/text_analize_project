@@ -1,31 +1,23 @@
+import os
+import time
 import torch
 import torch.optim as optim
 import tqdm
-import os
 import wandb
-import time
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.dataset import TextDataset, load_data
-from src.utils import load_config, set_seed, EarlyStopping
+from src.utils import EarlyStopping, load_config, set_seed
 
 
 def train_bert():
-    """
-    Train Bert model(cointegrated/rubert-tiny2) for sequence classification and log parameters, metrics, and artifacts to wandb.
-        - Load configuration from YAML file.
-        - Load and split the dataset.
-        - Preprocess text data using Bert tokenizer.
-        - Train a Bert model for sequence classification.
-        - Evaluate the model and log the F1 score.
-        - Save the trained model and tokenizer.
-    Returns:
-        None
+    """Train Bert model(cointegrated/rubert-tiny2) for sequence classification
+
+    and log parameters, metrics, and artifacts to wandb.
     """
     cfg = load_config("config/default.yaml")
-
     set_seed(cfg.training.seed)
 
     wandb.init(
@@ -35,7 +27,7 @@ def train_bert():
     )
 
     device = (
-        torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
+        torch.accelerator.current_accelerator().type
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -63,7 +55,11 @@ def train_bert():
         model = torch.nn.DataParallel(model)
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
-    early_stopping = EarlyStopping(patience=3)
+
+    save_dir = "models/rubert_tiny2"
+    early_stopping = EarlyStopping(
+        patience=3, save_path=os.path.join(save_dir, "pytorch_model.bin")
+    )
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -79,7 +75,9 @@ def train_bert():
             labels = batch["labels"].to(device)
 
             outputs = model(
-                input_ids=input_ids, attention_mask=attention_mask, labels=labels
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                labels=labels,
             )
 
             loss = outputs.loss.mean()
@@ -132,16 +130,14 @@ def train_bert():
         val_f1 = f1_score(all_labels, all_preds, average="weighted")
 
         wandb.log({"val_loss": avg_val_loss, "val_f1_score": val_f1, "epoch": epoch})
-
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+
         early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:
             print(f"ES на эпохе {epoch + 1}")
             break
-
-    save_dir = "models/rubert_tiny2"
 
     tokenizer.save_pretrained(save_dir)
     print(f"tokenizer successfully saved in {save_dir}")
