@@ -119,7 +119,7 @@ def train_mymodelv2():
 
         errors = error_analzyze(val_text, all_labels, all_preds, all_probs)
         df_errors = pd.DataFrame(errors)
-        df_errors.to_csv(f"data/errors/errors_epoch_{epoch + 1}.csv", index=False)
+        df_errors.to_csv(f"logs/errors_epoch_{epoch + 1}.csv", index=False)
 
     save_dir = "models/mymodelv2_classification"
     os.makedirs(save_dir, exist_ok=True)

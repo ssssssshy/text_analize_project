@@ -89,8 +89,8 @@ def predict_bert(text, model_path):
 
 
 def main():
-    text = "Математика — это сложная наука"
-
+    text = "Ужасный фильм"
+    print("1 - toxic  0 - no toxic")
     print("Тестируем MyModelV2...")
     print(f"Текст: {text}")
     model_v2_path = "./models/custom_modelv2"
@@ -101,7 +101,7 @@ def main():
     print(f"Текст: {text}")
     model_bert_path = "./models/bert_sequence_classification"
     res_class, confidence = predict_bert(text, model_bert_path)
-    print(f"Результат V2: Класс {res_class}, Уверенность: {confidence:.4f}\n")
+    print(f"Результат Bert: Класс {res_class}, Уверенность: {confidence:.4f}\n")
 
 
 if __name__ == "__main__":
