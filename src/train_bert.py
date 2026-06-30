@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.dataset import TextDataset, load_data
-from src.utils import load_config
+from src.utils import load_config, set_seed
 
 
 def train_bert():
@@ -25,6 +25,8 @@ def train_bert():
         None
     """
     cfg = load_config("config/default.yaml")
+
+    set_seed(cfg.training.seed)
 
     wandb.init(project="tat", name="bert-sequence-classification", config=dict(cfg))
 
@@ -53,10 +55,10 @@ def train_bert():
     val_loader = DataLoader(
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False
     )
-
-    optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
+
+    optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -75,7 +77,7 @@ def train_bert():
                 input_ids=input_ids, attention_mask=attention_mask, labels=labels
             )
 
-            loss = outputs.loss
+            loss = outputs.loss.mean()
             train_loss += loss.item()
 
             loss.backward()
@@ -113,7 +115,7 @@ def train_bert():
                     labels=labels,
                 )
 
-                val_loss += outputs.loss.item()
+                val_loss += outputs.loss.mean().item()
 
                 logits = outputs.logits.detach()
                 preds = torch.argmax(logits, dim=1)

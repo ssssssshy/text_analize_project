@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
 from src.model.mymodelv2 import MyModelV2
-from src.utils import load_config
+from src.utils import load_config, set_seed
 from src.dataset import load_data, TextDataset
 
 
@@ -21,6 +21,8 @@ def train_mymodelv2():
     )
 
     cfg = load_config("config/default.yaml")
+
+    set_seed(cfg.training.seed)
 
     wandb.init(project="tat", name="mymodelv2-classification", config=dict(cfg))
 
@@ -70,7 +72,7 @@ def train_mymodelv2():
             labels = batch["labels"].to(device)
 
             logits = model(input_ids, attention_mask)
-            loss = criterion(logits, labels)
+            loss = criterion(logits, labels).mean()
             train_loss += loss.item()
 
             loss.backward()
@@ -106,7 +108,7 @@ def train_mymodelv2():
                 labels = batch["labels"].to(device)
 
                 logits = model(input_ids, attention_mask).detach()
-                loss = criterion(logits, labels)
+                loss = criterion(logits, labels).mean()
                 val_loss += loss.item()
 
                 probs = torch.softmax(logits, dim=1)
