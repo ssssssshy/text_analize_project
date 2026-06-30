@@ -1,35 +1,34 @@
 import os
-import wandb
-import tqdm
-import torch
-import pandas as pd
 import time
+import torch
+import tqdm
+import wandb
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
+from src.dataset import TextDataset, load_data
 from src.model.mymodelv2 import MyModelV2
-from src.utils import load_config, set_seed, EarlyStopping
-from src.dataset import load_data, TextDataset
+from src.utils import EarlyStopping, load_config, set_seed
 
 
 def train_mymodelv2():
     device = (
-        torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
+        torch.accelerator.current_accelerator().type
         if torch.accelerator.is_available()
         else "cpu"
     )
 
     cfg = load_config("config/default.yaml")
-
     set_seed(cfg.training.seed)
 
     wandb.init(
-        project="tat", name="mymodelv2-classification-with-only-es", config=dict(cfg)
+        project="tat",
+        name="mymodelv2-classification-with-only-es",
+        config=dict(cfg),
     )
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(cfg.data.path)
-
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
 
     train_dataset = TextDataset(
@@ -59,7 +58,11 @@ def train_mymodelv2():
 
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.mymodel_lr)
-    early_stopping = EarlyStopping(patience=3)
+
+    save_dir = "models/mymodelv2_classification"
+    early_stopping = EarlyStopping(
+        patience=3, save_path=os.path.join(save_dir, "model_weights.pth")
+    )
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
@@ -91,15 +94,12 @@ def train_mymodelv2():
                 "epoch_duration_seconds": epoch_train_duration,
             }
         )
-        print(
-            f"Epoch {epoch + 1}/{cfg.training.num_epochs} - Train Loss: {avg_train_loss:.4f}"
-        )
+        print(f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.4f}")
 
         model.eval()
         val_loss = 0
         all_preds = []
         all_labels = []
-        all_probs = []
 
         with torch.no_grad():
             for batch in tqdm.tqdm(
@@ -114,43 +114,25 @@ def train_mymodelv2():
                 loss = criterion(logits, labels).mean()
                 val_loss += loss.item()
 
-                probs = torch.softmax(logits, dim=1)
-                class_1_probs = probs[:, 1]
-
                 preds = torch.argmax(logits, dim=1).detach()
-
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
-                all_probs.extend(class_1_probs.cpu().numpy())
 
         avg_val_loss = val_loss / len(val_loader)
         val_f1 = f1_score(all_labels, all_preds, average="weighted")
         wandb.log({"val_loss": avg_val_loss, "val_f1_score": val_f1, "epoch": epoch})
         print(
-            f"Epoch {epoch + 1}/{cfg.training.num_epochs} - Validation Loss: {avg_val_loss:.4f}"
-        )
-
-        print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
-        early_stopping(avg_val_loss)
+
+        early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:
-            print(
-                f"🛑 Ранняя остановка сработала на эпохе {epoch + 1}! Прерываем обучение."
-            )
+            print(f"ES на эпохе {epoch + 1}")
             break
 
-    save_dir = "models/mymodelv2_classification"
-    os.makedirs(save_dir, exist_ok=True)
-
-    if isinstance(model, torch.nn.DataParallel):
-        torch.save(
-            model.module.state_dict(), os.path.join(save_dir, "model_weights.pth")
-        )
-    else:
-        torch.save(model.state_dict(), os.path.join(save_dir, "model_weights.pth"))
     tokenizer.save_pretrained(save_dir)
-    print(f"\n Обучение завершено Модель сохранена в: {save_dir}")
+    print(f"tokenizer successfully saved in {save_dir}")
+
     wandb.finish()
 
 
