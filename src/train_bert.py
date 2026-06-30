@@ -7,7 +7,7 @@ from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from src.dataset import TextDataset, load_data
+from src.dataset import DynamicPaddingCollator, TextDataset, load_data
 from src.utils import load_config
 
 
@@ -38,19 +38,32 @@ def train_bert():
     )
     model.to(device)
 
-    x_train, x_val, x_test, y_train, y_val, y_test = load_data(
-        "data/processed/labeled.csv"
-    )
+    x_train, x_val, x_test, y_train, y_val, y_test = load_data(cfg.data.path)
     train_dataset = TextDataset(
-        x_train["comment"].tolist(), y_train.tolist(), tokenizer
+        x_train[cfg.data.text_column].tolist(),
+        y_train.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
-    val_dataset = TextDataset(x_val["comment"].tolist(), y_val.tolist(), tokenizer)
+    val_dataset = TextDataset(
+        x_val[cfg.data.text_column].tolist(),
+        y_val.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
+    )
 
+    collator = DynamicPaddingCollator(tokenizer)
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True
+        train_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=True,
+        collate_fn=collator,
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=cfg.training.batch_size, shuffle=False
+        val_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=False,
+        collate_fn=collator,
     )
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.learning_rate))
@@ -133,7 +146,7 @@ def train_bert():
             task="text-classification",
         )
 
-        save_dir = "models/bert_sequence_classification"
+        save_dir = cfg.paths.bert_dir
         model.save_pretrained(save_dir)
         tokenizer.save_pretrained(save_dir)
         print(f"Модель и токенизатор успешно сохранены локально в папку: {save_dir}")

@@ -17,7 +17,7 @@ cfg = load_config("config/default.yaml")
 
 def predict_mymodelv2(text, model_path):
     device = (
-        torch.accelerator.current_accelerator.type()
+        torch.accelerator.current_accelerator().type
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -30,15 +30,26 @@ def predict_mymodelv2(text, model_path):
         num_heads=cfg.mymodelv2_params.num_heads,
         num_layers=cfg.mymodelv2_params.num_layers,
         num_classes=cfg.mymodelv2_params.num_classes,
+        max_len=cfg.data.max_length,
+        pad_token_id=tokenizer.pad_token_id,
     )
 
     weight_path = os.path.join(model_path, "model_weights.pth")
+    if not os.path.exists(weight_path):
+        raise FileNotFoundError(
+            f"Файл весов не найден: {weight_path}. "
+            f"Сначала обучите модель командой: python -m src.train_mymodelv2"
+        )
     model.load_state_dict(torch.load(weight_path, map_location=device))
     model.to(device)
     model.eval()
 
     inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, padding=True, max_length=128
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        max_length=cfg.data.max_length,
     )
 
     input_ids = inputs["input_ids"].to(device)
@@ -57,7 +68,7 @@ def predict_mymodelv2(text, model_path):
 
 def predict_bert(text, model_path):
     device = (
-        torch.accelerator.current_accelerator.type()
+        torch.accelerator.current_accelerator().type
         if torch.accelerator.is_available()
         else "cpu"
     )
@@ -70,7 +81,11 @@ def predict_bert(text, model_path):
     model.eval()
 
     inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, padding=True, max_length=128
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        max_length=cfg.data.max_length,
     )
 
     input_ids = inputs["input_ids"].to(device)
@@ -93,14 +108,12 @@ def main():
     print("1 - toxic  0 - no toxic")
     print("Тестируем MyModelV2...")
     print(f"Текст: {text}")
-    model_v2_path = "./models/custom_modelv2"
-    res_class, confidence = predict_mymodelv2(text, model_v2_path)
+    res_class, confidence = predict_mymodelv2(text, cfg.paths.mymodelv2_dir)
     print(f"Результат V2: Класс {res_class}, Уверенность: {confidence:.4f}\n")
 
-    print("Тестируем Отфатюниный BERT...")
+    print("Тестируем дообученный BERT...")
     print(f"Текст: {text}")
-    model_bert_path = "./models/bert_sequence_classification"
-    res_class, confidence = predict_bert(text, model_bert_path)
+    res_class, confidence = predict_bert(text, cfg.paths.bert_dir)
     print(f"Результат Bert: Класс {res_class}, Уверенность: {confidence:.4f}\n")
 
 

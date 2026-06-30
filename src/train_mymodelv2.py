@@ -1,6 +1,6 @@
 from src.model.mymodelv2 import MyModelV2
 from src.utils import load_config
-from src.dataset import load_data, TextDataset
+from src.dataset import load_data, TextDataset, DynamicPaddingCollator
 from torch.utils.data import DataLoader
 import torch
 from transformers import AutoTokenizer
@@ -25,16 +25,28 @@ def train_mymodelv2():
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
 
     train_dataset = TextDataset(
-        X_train[cfg.data.text_column].tolist(), y_train.tolist(), tokenizer
+        X_train[cfg.data.text_column].tolist(),
+        y_train.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
     val_dataset = TextDataset(
-        X_val[cfg.data.text_column].tolist(), y_val.tolist(), tokenizer
+        X_val[cfg.data.text_column].tolist(),
+        y_val.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
 
+    collator = DynamicPaddingCollator(tokenizer)
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True
+        train_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=True,
+        collate_fn=collator,
     )
-    val_loader = DataLoader(val_dataset, batch_size=cfg.training.batch_size)
+    val_loader = DataLoader(
+        val_dataset, batch_size=cfg.training.batch_size, collate_fn=collator
+    )
 
     model = MyModelV2(
         vocab_size=tokenizer.vocab_size,
@@ -42,6 +54,8 @@ def train_mymodelv2():
         num_heads=cfg.mymodelv2_params.num_heads,
         num_layers=cfg.mymodelv2_params.num_layers,
         num_classes=cfg.mymodelv2_params.num_classes,
+        max_len=cfg.data.max_length,
+        pad_token_id=tokenizer.pad_token_id,
     )
 
     if torch.cuda.device_count() > 1:
@@ -121,7 +135,7 @@ def train_mymodelv2():
         df_errors = pd.DataFrame(errors)
         df_errors.to_csv(f"logs/errors_epoch_{epoch + 1}.csv", index=False)
 
-    save_dir = "models/mymodelv2_classification"
+    save_dir = cfg.paths.mymodelv2_dir
     os.makedirs(save_dir, exist_ok=True)
 
     if isinstance(model, torch.nn.DataParallel):

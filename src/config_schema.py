@@ -6,6 +6,7 @@ class Config(BaseModel):
     target_column: str
     text_column: str
     test_size: float
+    max_length: int = 256
 
 
 class ModelConfig(BaseModel):
@@ -27,8 +28,14 @@ class TrainingConfig(BaseModel):
     learning_rate: float
 
 
+class PathsConfig(BaseModel):
+    bert_dir: str
+    mymodelv2_dir: str
+
+
 class AppConfig(BaseModel):
     data: Config
     model: ModelConfig
     training: TrainingConfig
     mymodelv2_params: mymodelv2_params
+    paths: PathsConfig
