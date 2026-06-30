@@ -1,24 +1,23 @@
 data:
-  path: data/processed/cleaned_dataset.csv
-  target_column: 'toxic'
-  text_column: 'comment'
+  path: "data/processed/cleaned_dataset.csv"
+  target_column: "toxic"
+  text_column: "comment"
   test_size: 0.2
 
-
 model:
-  model_name: 'cointegrated/rubert-tiny2'
+  model_name: "cointegrated/rubert-tiny2"
   num_classes: 2
 
-
 mymodelv2_params:
-  embedding_dim: 300
+  embedding_dim: 256
   num_heads: 4
   num_layers: 2
   num_classes: 2  
 
-
 training:
   seed: 42
   batch_size: 32
-  num_epochs: 3
-  learning_rate: 2e-5
+  num_epochs: 10
+
+  bert_lr: 2e-5      
+  mymodel_lr: 3e-4   

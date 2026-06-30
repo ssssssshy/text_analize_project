@@ -52,7 +52,7 @@ def train_bert():
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False
     )
 
-    optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.learning_rate))
+    optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
 
     for epoch in range(cfg.training.num_epochs):
         model.train()

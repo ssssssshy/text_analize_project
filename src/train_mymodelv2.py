@@ -3,6 +3,7 @@ import wandb
 import tqdm
 import torch
 import pandas as pd
+import time
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
@@ -54,11 +55,12 @@ def train_mymodelv2():
     model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.mymodel_lr)
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
         train_loss = 0
+        epoch_start_time = time.time()
 
         for batch in tqdm.tqdm(
             train_loader,
@@ -77,7 +79,14 @@ def train_mymodelv2():
             optimizer.zero_grad()
 
         avg_train_loss = train_loss / len(train_loader)
-        wandb.log({"train_loss": avg_train_loss, "epoch": epoch})
+        epoch_train_duration = time.time() - epoch_start_time
+        wandb.log(
+            {
+                "train_loss": avg_train_loss,
+                "epoch": epoch,
+                "epoch_duration_seconds": epoch_train_duration,
+            }
+        )
         print(
             f"Epoch {epoch + 1}/{cfg.training.num_epochs} - Train Loss: {avg_train_loss:.4f}"
         )

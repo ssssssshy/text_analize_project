@@ -24,7 +24,8 @@ class TrainingConfig(BaseModel):
     seed: int
     batch_size: int
     num_epochs: int
-    learning_rate: float
+    bert_lr: float
+    mymodel_lr: float
 
 
 class AppConfig(BaseModel):
