@@ -23,8 +23,8 @@ def train_bert():
         None
     """
     cfg = load_config("config/default.yaml")
-    
-    wandb.init(project="bert-sequence-classification", config=dict(cfg))
+
+    wandb.init(project="tat", name="bert-sequence-classification", config=dict(cfg))
 
     device = (
         torch.accelerator.current_accelerator().type  # pyright: ignore[reportOptionalMemberAccess]
@@ -39,9 +39,7 @@ def train_bert():
     )
     model.to(device)
 
-    x_train, x_val, x_test, y_train, y_val, y_test = load_data(
-        "data/processed/labeled.csv"
-    )
+    x_train, x_val, x_test, y_train, y_val, y_test = load_data(cfg.data.path)
     train_dataset = TextDataset(
         x_train["comment"].tolist(), y_train.tolist(), tokenizer
     )
@@ -123,5 +121,5 @@ def train_bert():
     model.save_pretrained(save_dir)
     tokenizer.save_pretrained(save_dir)
     print(f"Модель и токенизатор успешно сохранены локально в папку: {save_dir}")
-    
+
     wandb.finish()

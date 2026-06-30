@@ -21,8 +21,8 @@ def train_mymodelv2():
     )
 
     cfg = load_config("config/default.yaml")
-    
-    wandb.init(project="mymodelv2-classification", config=dict(cfg))
+
+    wandb.init(project="tat", name="mymodelv2-classification", config=dict(cfg))
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(cfg.data.path)
 
@@ -97,14 +97,14 @@ def train_mymodelv2():
                 attention_mask = batch["attention_mask"].to(device)
                 labels = batch["labels"].to(device)
 
-                logits = model(input_ids, attention_mask)
+                logits = model(input_ids, attention_mask).detach()
                 loss = criterion(logits, labels)
                 val_loss += loss.item()
 
                 probs = torch.softmax(logits, dim=1)
                 class_1_probs = probs[:, 1]
 
-                preds = torch.argmax(logits, dim=1)
+                preds = torch.argmax(logits, dim=1).detach()
 
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
