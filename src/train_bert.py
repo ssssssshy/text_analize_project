@@ -1,7 +1,9 @@
 import torch
 import torch.optim as optim
 import tqdm
+import os
 import wandb
+import time
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -53,10 +55,13 @@ def train_bert():
     )
 
     optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
+    if torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
 
     for epoch in range(cfg.training.num_epochs):
         model.train()
         train_loss = 0
+        epoch_start_time = time.time()
 
         for batch in tqdm.tqdm(
             train_loader,
@@ -78,7 +83,14 @@ def train_bert():
             optimizer.zero_grad()
 
         avg_train_loss = train_loss / len(train_loader)
-        wandb.log({"train_loss": avg_train_loss, "epoch": epoch})
+        epoch_train_duration = time.time() - epoch_start_time
+        wandb.log(
+            {
+                "train_loss": avg_train_loss,
+                "epoch": epoch,
+                "epoch_duration_seconds": epoch_train_duration,
+            }
+        )
         print(f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.4f}")
 
         model.eval()
@@ -103,7 +115,8 @@ def train_bert():
 
                 val_loss += outputs.loss.item()
 
-                preds = torch.argmax(outputs.logits, dim=1)
+                logits = outputs.logits.detach()
+                preds = torch.argmax(logits, dim=1)
 
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
@@ -117,9 +130,19 @@ def train_bert():
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
 
-    save_dir = "models/bert_sequence_classification"
-    model.save_pretrained(save_dir)
+    save_dir = "models/rubert_tiny2"
+    os.makedirs(save_dir, exist_ok=True)
+
+    if isinstance(model, torch.nn.DataParallel):
+        model.module.save_pretrained(save_dir)
+    else:
+        model.save_pretrained(save_dir)
+
     tokenizer.save_pretrained(save_dir)
-    print(f"Модель и токенизатор успешно сохранены локально в папку: {save_dir}")
+    print(f"Модель и токенизатор успешно сохранены в: {save_dir}")
 
     wandb.finish()
+
+
+if __name__ == "__main__":
+    train_bert()
