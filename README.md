@@ -8,7 +8,7 @@ This project provides a framework for training and evaluating text analysis mode
 - `data/`: Directory for raw and processed data (ignored by Git).
 - `models/`: Pre-trained model weights and configurations (managed via Git LFS):
   - `bert_sequence_classification/`: Fine-tuned BERT model weights (`model.safetensors`) and tokenizer configs.
-  - `custom_modelv2w/`: Custom transformer weights (`model_weights.pth`) and tokenizer configs.
+  - `custom_modelv2/`: Custom transformer weights (`model_weights.pth`) and tokenizer configs.
 - `src/`: Source code for data processing, training, and prediction.
   - `model/`: Custom model architectures.
   - `dataset.py`: Data loading and preprocessing pipelines.
