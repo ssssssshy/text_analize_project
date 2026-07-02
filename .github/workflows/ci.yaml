@@ -1,0 +1,40 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Cache Mamba packages
+      uses: actions/cache@v4
+      with:
+        path: ~/micromamba/pkgs
+        key: ${{ runner.os }}-mamba-${{ hashFiles('environment.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-mamba-
+
+    - name: Setup Environment via Micromamba
+      uses: mamba-org/setup-micromamba@v2
+      with:
+        environment-file: environment.yml
+        environment-name: ml
+        cache-environment: true
+
+    - name: Lint with Ruff
+      run: |
+        micromamba run -n ml ruff check src/ tests/
+        micromamba run -n ml ruff format --check src/ tests/
+
+
+    - name: Run Tests
+      run: |
+        micromamba run -n ml python -m pytest tests/ --durations=10
