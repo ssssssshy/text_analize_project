@@ -58,8 +58,35 @@ def train_mymodelv2():
     model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
+
+    decay_parameters = [
+        n
+        for n, p in model.named_parameters()
+        if p.dim() > 1
+        and not any(nd in n for nd in ["bias", "LayerNorm.weight", "LayerNorm.bias"])
+    ]
+
+    optimizer_grouped_parameters = [
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n in decay_parameters and p.requires_grad
+            ],
+            "weight_decay": 0.05,
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters and p.requires_grad
+            ],
+            "weight_decay": 0.0,
+        },
+    ]
+
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=cfg.training.mymodel_lr, weight_decay=0.01
+        optimizer_grouped_parameters, lr=cfg.training.mymodel_lr
     )
     scheduler = ReduceLROnPlateau(
         optimizer,

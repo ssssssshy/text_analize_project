@@ -19,10 +19,13 @@ class MyModelV2(nn.Module):
             embedding_dim=embedding_dim,
         )
 
+        self.embedding_dropout = nn.Dropout(p=0.1)
+
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=embedding_dim,
             nhead=num_heads,
             dim_feedforward=embedding_dim * 4,
+            dropout=0.1,
             activation="gelu",
             batch_first=True,
             norm_first=True,
