@@ -89,7 +89,7 @@ def predict_bert(text, model_bert_path):
 
 
 def main():
-    text = "Ужасный фильм"
+    text = "Ну да, конечно, ты у нас самый умный, а мы тут все дураки."
     print("1 - toxic  0 - no toxic")
     print("Тестируем MyModelV2...")
     print(f"Текст: {text}")

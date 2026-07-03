@@ -25,7 +25,7 @@ def train_mymodelv2():
 
     wandb.init(
         project="tat",
-        name="mymodelv2-classification-with-es-lrsh-pos-en",
+        name="mymodelv2-classification-with-es-lrsh-pos-en-2",
         config=dict(cfg),
     )
 
@@ -62,8 +62,8 @@ def train_mymodelv2():
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode="min",
-        factor=0.2,
-        patience=2,
+        factor=0.5,
+        patience=1,
     )
 
     save_dir = "models/mymodelv2_classification"

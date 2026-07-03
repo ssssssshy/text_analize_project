@@ -23,7 +23,7 @@ def train_bert():
 
     wandb.init(
         project="tat",
-        name="bert-sequence-classification-with-es-lrsh",
+        name="bert-sequence-classification-with-es-lrsh-2",
         config=dict(cfg),
     )
 
@@ -60,8 +60,8 @@ def train_bert():
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode="min",
-        factor=0.2,
-        patience=2,
+        factor=0.5,
+        patience=1,
     )
 
     save_dir = "models/rubert_tiny2"

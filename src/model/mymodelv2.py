@@ -1,6 +1,5 @@
 from torch import nn
 import torch
-
 from src.utils import load_config
 
 cfg = load_config()
@@ -30,7 +29,7 @@ class MyModelV2(nn.Module):
         )
 
         self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer, num_layers=num_layers
+            encoder_layer, num_layers=num_layers, enable_nested_tensor=False
         )
 
         self.fc = nn.Linear(
@@ -43,7 +42,8 @@ class MyModelV2(nn.Module):
 
         position_embeddings = self.position_embedding(
             torch.arange(x.size(1), device=x.device)
-        )
+        ).unsqueeze(0)
+
         x = word_embeddings + position_embeddings
 
         if attention_mask is not None:
