@@ -117,6 +117,8 @@ def train_mymodelv2():
             train_loader,
             desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Train]",
         ):
+            optimizer.zero_grad()
+
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"].to(device)
@@ -127,7 +129,6 @@ def train_mymodelv2():
 
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
 
         avg_train_loss = train_loss / len(train_loader)
         epoch_train_duration = time.time() - epoch_start_time

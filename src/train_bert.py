@@ -75,7 +75,7 @@ def train_bert():
                 for n, p in model.named_parameters()
                 if n in decay_parameters and p.requires_grad
             ],
-            "weight_decay": 0.01,  # Стандартная регуляризация для BERT
+            "weight_decay": 0.01,
         },
         {
             "params": [

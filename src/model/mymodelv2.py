@@ -51,12 +51,25 @@ class MyModelV2(nn.Module):
         )
         x = word_embeddings + position_embeddings
 
+        x = self.embedding_dropout(x)
+
         if attention_mask is not None:
             key_padding_mask = ~attention_mask.bool()
         else:
             key_padding_mask = None
 
         x = self.transformer_encoder(x, src_key_padding_mask=key_padding_mask)
-        x = torch.mean(x, dim=1)
+
+        if attention_mask is not None:
+            input_mask_expanded = attention_mask.unsqueeze(-1).expand(x.size()).float()
+
+            sum_embeddings = torch.sum(x * input_mask_expanded, dim=1)
+
+            sum_mask = torch.clamp(input_mask_expanded.sum(dim=1), min=1e-9)
+
+            x = sum_embeddings / sum_mask
+        else:
+            x = torch.mean(x, dim=1)
+
         logits = self.fc(x)
         return logits
