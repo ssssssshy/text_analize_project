@@ -25,8 +25,16 @@ def train_mymodelv2():
 
     wandb.init(
         project="tat",
-        name="mymodelv2-classification-with-es-lrsh-pos-en-2",
-        config=dict(cfg),
+        name="mymodelv2_pos-en_v2",
+        config={
+            "architecture": "mymodelv2",
+            "task": "classification",
+            "dataset": "pos-en",
+            "early_stopping": True,
+            "lr_scheduler": "ReduceLROnPlateau",
+            "weight_decay": 0.05,
+            **dict(cfg),
+        },
     )
 
     X_train, X_val, X_test, y_train, y_val, y_test = load_data(cfg.data.path)
@@ -123,13 +131,6 @@ def train_mymodelv2():
 
         avg_train_loss = train_loss / len(train_loader)
         epoch_train_duration = time.time() - epoch_start_time
-        wandb.log(
-            {
-                "train_loss": avg_train_loss,
-                "epoch": epoch,
-                "epoch_duration_seconds": epoch_train_duration,
-            }
-        )
         print(f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.4f}")
 
         model.eval()
@@ -156,15 +157,23 @@ def train_mymodelv2():
 
         avg_val_loss = val_loss / len(val_loader)
         val_f1 = f1_score(all_labels, all_preds, average="weighted")
-        wandb.log({"val_loss": avg_val_loss, "val_f1_score": val_f1, "epoch": epoch})
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
 
         scheduler.step(avg_val_loss)
-
         current_lr = optimizer.param_groups[0]["lr"]
-        wandb.log({"learning_rate": current_lr, "epoch": epoch})
+
+        wandb.log(
+            {
+                "epoch": epoch + 1,
+                "train_loss": avg_train_loss,
+                "val_loss": avg_val_loss,
+                "val_f1_score": val_f1,
+                "learning_rate": current_lr,
+                "epoch_duration_seconds": epoch_train_duration,
+            }
+        )
 
         early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:

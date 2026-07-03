@@ -14,17 +14,22 @@ from src.utils import EarlyStopping, load_config, set_seed
 
 
 def train_bert():
-    """Train Bert model(cointegrated/rubert-tiny2) for sequence classification
-
-    and log parameters, metrics, and artifacts to wandb.
-    """
+    """Train Bert model (cointegrated/rubert-tiny2) for sequence classification."""
     cfg = load_config("config/default.yaml")
     set_seed(cfg.training.seed)
 
     wandb.init(
         project="tat",
-        name="bert-sequence-classification-with-es-lrsh-2",
-        config=dict(cfg),
+        name="rubert-tiny2_baseline_v2",
+        config={
+            "architecture": "rubert-tiny2",
+            "task": "classification",
+            "dataset": "base-comments",
+            "early_stopping": True,
+            "lr_scheduler": "ReduceLROnPlateau",
+            "weight_decay": 0.01,
+            **dict(cfg),
+        },
     )
 
     device = (
@@ -52,10 +57,39 @@ def train_bert():
     val_loader = DataLoader(
         val_dataset, batch_size=cfg.training.batch_size, shuffle=False
     )
+
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 
-    optimizer = optim.AdamW(model.parameters(), lr=float(cfg.training.bert_lr))
+    decay_parameters = [
+        n
+        for n, p in model.named_parameters()
+        if p.dim() > 1
+        and not any(nd in n for nd in ["bias", "LayerNorm.weight", "LayerNorm.bias"])
+    ]
+
+    optimizer_grouped_parameters = [
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n in decay_parameters and p.requires_grad
+            ],
+            "weight_decay": 0.01,  # Стандартная регуляризация для BERT
+        },
+        {
+            "params": [
+                p
+                for n, p in model.named_parameters()
+                if n not in decay_parameters and p.requires_grad
+            ],
+            "weight_decay": 0.0,
+        },
+    ]
+
+    optimizer = optim.AdamW(
+        optimizer_grouped_parameters, lr=float(cfg.training.bert_lr)
+    )
 
     scheduler = ReduceLROnPlateau(
         optimizer,
@@ -97,13 +131,6 @@ def train_bert():
 
         avg_train_loss = train_loss / len(train_loader)
         epoch_train_duration = time.time() - epoch_start_time
-        wandb.log(
-            {
-                "train_loss": avg_train_loss,
-                "epoch": epoch,
-                "epoch_duration_seconds": epoch_train_duration,
-            }
-        )
         print(f"Epoch {epoch + 1} | Train Loss: {avg_train_loss:.4f}")
 
         model.eval()
@@ -136,16 +163,23 @@ def train_bert():
 
         avg_val_loss = val_loss / len(val_loader)
         val_f1 = f1_score(all_labels, all_preds, average="weighted")
-
-        wandb.log({"val_loss": avg_val_loss, "val_f1_score": val_f1, "epoch": epoch})
         print(
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
 
         scheduler.step(avg_val_loss)
-
         current_lr = optimizer.param_groups[0]["lr"]
-        wandb.log({"learning_rate": current_lr, "epoch": epoch})
+
+        wandb.log(
+            {
+                "epoch": epoch + 1,
+                "train_loss": avg_train_loss,
+                "val_loss": avg_val_loss,
+                "val_f1_score": val_f1,
+                "learning_rate": current_lr,
+                "epoch_duration_seconds": epoch_train_duration,
+            }
+        )
 
         early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:
