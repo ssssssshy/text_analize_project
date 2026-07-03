@@ -14,14 +14,7 @@ __pycache__/
 data/raw/
 data/processed/
 mlruns/
-
 .trash/
-
-# Игнорируем только тяжелые бинарники в моделях, если они ВДРУГ не попали в LFS
-# (на всякий случай, чтобы случайно не запушить 500МБ в обычный Git)
-*.safetensors
-*.pth
-*.joblib
 
 # Notebooks and OS artifacts
 .ipynb_checkpoints/
@@ -35,7 +28,7 @@ htmlcov/
 # Logs
 *.log
 
+# Project specific
 error_analyze.ipynb
-mlruns/
 kaggle.txt
 GEMINI.md
