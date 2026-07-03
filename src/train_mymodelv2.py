@@ -25,7 +25,7 @@ def train_mymodelv2():
 
     wandb.init(
         project="tat",
-        name="mymodelv2-classification-with-es-lrsh",
+        name="mymodelv2-classification-with-es-lrsh-pos-en",
         config=dict(cfg),
     )
 

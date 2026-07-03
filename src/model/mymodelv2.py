@@ -15,6 +15,11 @@ class MyModelV2(nn.Module):
             embedding_dim=embedding_dim,
         )
 
+        self.position_embedding = nn.Embedding(
+            num_embeddings=cfg.mymodelv2_params.max_seq_length,
+            embedding_dim=embedding_dim,
+        )
+
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=embedding_dim,
             nhead=num_heads,
@@ -34,7 +39,12 @@ class MyModelV2(nn.Module):
         )
 
     def forward(self, x, attention_mask=None):
-        x = self.embedding(x)
+        word_embeddings = self.embedding(x)
+
+        position_embeddings = self.position_embedding(
+            torch.arange(x.size(1), device=x.device)
+        )
+        x = word_embeddings + position_embeddings
 
         if attention_mask is not None:
             key_padding_mask = ~attention_mask.bool()

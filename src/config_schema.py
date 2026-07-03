@@ -18,6 +18,7 @@ class mymodelv2_params(BaseModel):
     num_heads: int
     num_layers: int
     num_classes: int
+    max_seq_length: int
 
 
 class TrainingConfig(BaseModel):

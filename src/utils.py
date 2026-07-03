@@ -1,5 +1,3 @@
-from typing import Any
-
 import yaml
 import random
 import numpy as np
