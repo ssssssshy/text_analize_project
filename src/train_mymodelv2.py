@@ -58,7 +58,9 @@ def train_mymodelv2():
     model.to(device)
 
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.mymodel_lr)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=cfg.training.mymodel_lr, weight_decay=0.01
+    )
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode="min",

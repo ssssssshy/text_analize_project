@@ -40,10 +40,12 @@ class MyModelV2(nn.Module):
     def forward(self, x, attention_mask=None):
         word_embeddings = self.embedding(x)
 
-        position_embeddings = self.position_embedding(
-            torch.arange(x.size(1), device=x.device)
-        ).unsqueeze(0)
-
+        seq_len = x.size(1)
+        position_embeddings = (
+            self.position_embedding(torch.arange(seq_len, device=x.device))
+            .unsqueeze(0)
+            .expand(x.size(0), -1, -1)
+        )
         x = word_embeddings + position_embeddings
 
         if attention_mask is not None:
