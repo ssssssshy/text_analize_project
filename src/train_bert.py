@@ -6,7 +6,7 @@ import tqdm
 import wandb
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from transformers import get_cosine_schedule_with_warmup
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.dataset import TextDataset, load_data
@@ -26,7 +26,7 @@ def train_bert():
             "task": "classification",
             "dataset": "base-comments",
             "early_stopping": True,
-            "lr_scheduler": "ReduceLROnPlateau",
+            "lr_scheduler": "CosineWarmup",
             "weight_decay": 0.01,
             **dict(cfg),
         },
@@ -75,7 +75,7 @@ def train_bert():
                 for n, p in model.named_parameters()
                 if n in decay_parameters and p.requires_grad
             ],
-            "weight_decay": 0.01,
+            "weight_decay": 0.05,
         },
         {
             "params": [
@@ -91,11 +91,14 @@ def train_bert():
         optimizer_grouped_parameters, lr=float(cfg.training.bert_lr)
     )
 
-    scheduler = ReduceLROnPlateau(
+    num_training_steps = len(train_loader) * cfg.training.bert_epochs
+
+    num_warmup_steps = int(0.1 * num_training_steps)
+
+    scheduler = get_cosine_schedule_with_warmup(
         optimizer,
-        mode="min",
-        factor=0.5,
-        patience=1,
+        num_warmup_steps=num_warmup_steps,
+        num_training_steps=num_training_steps,
     )
 
     save_dir = "models/rubert_tiny2"
@@ -103,15 +106,17 @@ def train_bert():
         patience=3, save_path=os.path.join(save_dir, "pytorch_model.bin")
     )
 
-    for epoch in range(cfg.training.num_epochs):
+    for epoch in range(cfg.training.bert_epochs):
         model.train()
         train_loss = 0
         epoch_start_time = time.time()
 
         for batch in tqdm.tqdm(
             train_loader,
-            desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Train]",
+            desc=f"Epoch {epoch + 1}/{cfg.training.bert_epochs} [Train]",
         ):
+            optimizer.zero_grad()
+
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"].to(device)
@@ -126,8 +131,9 @@ def train_bert():
             train_loss += loss.item()
 
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
-            optimizer.zero_grad()
+            scheduler.step()
 
         avg_train_loss = train_loss / len(train_loader)
         epoch_train_duration = time.time() - epoch_start_time
@@ -141,7 +147,7 @@ def train_bert():
         with torch.no_grad():
             for batch in tqdm.tqdm(
                 val_loader,
-                desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Val]",
+                desc=f"Epoch {epoch + 1}/{cfg.training.bert_epochs} [Val]",
             ):
                 input_ids = batch["input_ids"].to(device)
                 attention_mask = batch["attention_mask"].to(device)
@@ -167,7 +173,6 @@ def train_bert():
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
 
-        scheduler.step(avg_val_loss)
         current_lr = optimizer.param_groups[0]["lr"]
 
         wandb.log(

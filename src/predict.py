@@ -57,7 +57,7 @@ def predict_mymodelv2(text, model_path):
 
 def predict_bert(text, model_bert_path):
     device = (
-        torch.accelerator.current_accelerator.type()
+        torch.accelerator.current_accelerator().type  # type: ignore
         if torch.accelerator.is_available()
         else "cpu"
     )

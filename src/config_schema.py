@@ -24,7 +24,8 @@ class mymodelv2_params(BaseModel):
 class TrainingConfig(BaseModel):
     seed: int
     batch_size: int
-    num_epochs: int
+    mymodel_epochs: int
+    bert_epochs: int
     bert_lr: float
     mymodel_lr: float
 

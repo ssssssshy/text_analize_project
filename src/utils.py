@@ -47,12 +47,9 @@ class EarlyStopping:
     def _save_checkpoint(self, model):
         os.makedirs(os.path.dirname(self.save_path), exist_ok=True)
 
-        if isinstance(model, torch.nn.DataParallel):
-            state_dict = model.module.state_dict()
-        elif hasattr(model, "save_pretrained"):
-            model.save_pretrained(os.path.dirname(self.save_path))
-            return
-        else:
-            state_dict = model.state_dict()
+        base_model = model.module if isinstance(model, torch.nn.DataParallel) else model
 
-        torch.save(state_dict, self.save_path)
+        if hasattr(base_model, "save_pretrained"):
+            base_model.save_pretrained(os.path.dirname(self.save_path))
+        else:
+            torch.save(base_model.state_dict(), self.save_path)

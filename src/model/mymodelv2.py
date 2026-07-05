@@ -1,8 +1,5 @@
 from torch import nn
 import torch
-from src.utils import load_config
-
-cfg = load_config()
 
 
 class MyModelV2(nn.Module):
@@ -15,17 +12,17 @@ class MyModelV2(nn.Module):
         )
 
         self.position_embedding = nn.Embedding(
-            num_embeddings=cfg.mymodelv2_params.max_seq_length,
+            num_embeddings=512,
             embedding_dim=embedding_dim,
         )
 
-        self.embedding_dropout = nn.Dropout(p=0.1)
+        self.embedding_dropout = nn.Dropout(p=0.3)
 
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=embedding_dim,
             nhead=num_heads,
             dim_feedforward=embedding_dim * 4,
-            dropout=0.1,
+            dropout=0.3,
             activation="gelu",
             batch_first=True,
             norm_first=True,

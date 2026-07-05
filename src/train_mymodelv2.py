@@ -6,7 +6,7 @@ import wandb
 from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim import lr_scheduler
 
 from src.dataset import TextDataset, load_data
 from src.model.mymodelv2 import MyModelV2
@@ -31,8 +31,9 @@ def train_mymodelv2():
             "task": "classification",
             "dataset": "pos-en",
             "early_stopping": True,
-            "lr_scheduler": "ReduceLROnPlateau",
+            "lr_scheduler": "CosineAnnealingLR",
             "weight_decay": 0.05,
+            "dropout": 0.3,
             **dict(cfg),
         },
     )
@@ -96,11 +97,8 @@ def train_mymodelv2():
     optimizer = torch.optim.AdamW(
         optimizer_grouped_parameters, lr=cfg.training.mymodel_lr
     )
-    scheduler = ReduceLROnPlateau(
-        optimizer,
-        mode="min",
-        factor=0.5,
-        patience=1,
+    scheduler = lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=cfg.training.mymodel_epochs, eta_min=1e-6
     )
 
     save_dir = "models/mymodelv2_classification"
@@ -108,14 +106,14 @@ def train_mymodelv2():
         patience=3, save_path=os.path.join(save_dir, "model_weights.pth")
     )
 
-    for epoch in range(cfg.training.num_epochs):
+    for epoch in range(cfg.training.mymodel_epochs):
         model.train()
         train_loss = 0
         epoch_start_time = time.time()
 
         for batch in tqdm.tqdm(
             train_loader,
-            desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Train]",
+            desc=f"Epoch {epoch + 1}/{cfg.training.mymodel_epochs} [Train]",
         ):
             optimizer.zero_grad()
 
@@ -128,6 +126,7 @@ def train_mymodelv2():
             train_loss += loss.item()
 
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
 
         avg_train_loss = train_loss / len(train_loader)
@@ -142,7 +141,7 @@ def train_mymodelv2():
         with torch.no_grad():
             for batch in tqdm.tqdm(
                 val_loader,
-                desc=f"Epoch {epoch + 1}/{cfg.training.num_epochs} [Validation]",
+                desc=f"Epoch {epoch + 1}/{cfg.training.mymodel_epochs} [Validation]",
             ):
                 input_ids = batch["input_ids"].to(device)
                 attention_mask = batch["attention_mask"].to(device)
@@ -162,7 +161,7 @@ def train_mymodelv2():
             f"Epoch {epoch + 1} | Val Loss: {avg_val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
 
-        scheduler.step(avg_val_loss)
+        scheduler.step()
         current_lr = optimizer.param_groups[0]["lr"]
 
         wandb.log(
