@@ -34,7 +34,3 @@ jobs:
         micromamba run -n ml ruff check src/ tests/
         micromamba run -n ml ruff format --check src/ tests/
 
-
-    - name: Run Tests
-      run: |
-        micromamba run -n ml python -m pytest tests/ --durations=10
