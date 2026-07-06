@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import get_cosine_schedule_with_warmup
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from src.dataset import TextDataset, load_data
+from src.dataset import DynamicPaddingCollator, TextDataset, load_data
 from src.utils import EarlyStopping, load_config, set_seed
 
 
@@ -47,15 +47,30 @@ def train_bert():
 
     x_train, x_val, x_test, y_train, y_val, y_test = load_data(cfg.data.path)
     train_dataset = TextDataset(
-        x_train["comment"].tolist(), y_train.tolist(), tokenizer
+        x_train[cfg.data.text_column].tolist(),
+        y_train.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
-    val_dataset = TextDataset(x_val["comment"].tolist(), y_val.tolist(), tokenizer)
+    val_dataset = TextDataset(
+        x_val[cfg.data.text_column].tolist(),
+        y_val.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
+    )
 
+    collator = DynamicPaddingCollator(tokenizer)
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True
+        train_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=True,
+        collate_fn=collator,
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=cfg.training.batch_size, shuffle=False
+        val_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=False,
+        collate_fn=collator,
     )
 
     if torch.cuda.device_count() > 1:
@@ -92,7 +107,6 @@ def train_bert():
     )
 
     num_training_steps = len(train_loader) * cfg.training.bert_epochs
-
     num_warmup_steps = int(0.1 * num_training_steps)
 
     scheduler = get_cosine_schedule_with_warmup(
@@ -101,7 +115,7 @@ def train_bert():
         num_training_steps=num_training_steps,
     )
 
-    save_dir = "models/rubert_tiny2"
+    save_dir = cfg.paths.bert_dir
     early_stopping = EarlyStopping(
         patience=3, save_path=os.path.join(save_dir, "pytorch_model.bin")
     )
@@ -191,8 +205,13 @@ def train_bert():
             print(f"ES на эпохе {epoch + 1}")
             break
 
+    if hasattr(model, "module"):
+        model.module.save_pretrained(save_dir)
+    else:
+        model.save_pretrained(save_dir)  # type: ignore
+
     tokenizer.save_pretrained(save_dir)
-    print(f"tokenizer successfully saved in {save_dir}")
+    print(f"Модель и токенизатор успешно сохранены в: {save_dir}")
 
     wandb.finish()
 

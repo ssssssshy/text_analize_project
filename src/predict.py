@@ -33,12 +33,21 @@ def predict_mymodelv2(text, model_path):
     )
 
     weight_path = os.path.join(model_path, "model_weights.pth")
+    if not os.path.exists(weight_path):
+        raise FileNotFoundError(
+            f"Файл весов не найден: {weight_path}. "
+            f"Сначала обучите модель командой: python -m src.train_mymodelv2"
+        )
     model.load_state_dict(torch.load(weight_path, map_location=device))
     model.to(device)
     model.eval()
 
     inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, padding=True, max_length=128
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        max_length=cfg.data.max_length,
     )
 
     input_ids = inputs["input_ids"].to(device)
@@ -63,14 +72,17 @@ def predict_bert(text, model_bert_path):
     )
 
     tokenizer = AutoTokenizer.from_pretrained(model_bert_path)
-
     model = AutoModelForSequenceClassification.from_pretrained(model_bert_path)
 
     model.to(device)
     model.eval()
 
     inputs = tokenizer(
-        text, return_tensors="pt", truncation=True, padding=True, max_length=128
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        max_length=cfg.data.max_length,
     )
 
     input_ids = inputs["input_ids"].to(device)
@@ -93,14 +105,12 @@ def main():
     print("1 - toxic  0 - no toxic")
     print("Тестируем MyModelV2...")
     print(f"Текст: {text}")
-    model_v2_path = "./models/mymodelv2_classification"
-    res_class, confidence = predict_mymodelv2(text, model_v2_path)
+    res_class, confidence = predict_mymodelv2(text, cfg.paths.mymodelv2_dir)
     print(f"Результат V2: Класс {res_class}, Уверенность: {confidence:.4f}\n")
 
-    print("Тестируем Отфатюниный BERT...")
+    print("Тестируем дообученный BERT...")
     print(f"Текст: {text}")
-    model_bert_path = "./models/rubert_tiny2"
-    res_class, confidence = predict_bert(text, model_bert_path)
+    res_class, confidence = predict_bert(text, cfg.paths.bert_dir)
     print(f"Результат Bert: Класс {res_class}, Уверенность: {confidence:.4f}\n")
 
 

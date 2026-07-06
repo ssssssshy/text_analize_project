@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 from torch.optim import lr_scheduler
 
-from src.dataset import TextDataset, load_data
+from src.dataset import TextDataset, load_data, DynamicPaddingCollator
 from src.model.mymodelv2 import MyModelV2
 from src.utils import EarlyStopping, load_config, set_seed
 
@@ -42,16 +42,28 @@ def train_mymodelv2():
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.model_name)
 
     train_dataset = TextDataset(
-        X_train[cfg.data.text_column].tolist(), y_train.tolist(), tokenizer
+        X_train[cfg.data.text_column].tolist(),
+        y_train.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
     val_dataset = TextDataset(
-        X_val[cfg.data.text_column].tolist(), y_val.tolist(), tokenizer
+        X_val[cfg.data.text_column].tolist(),
+        y_val.tolist(),
+        tokenizer,
+        max_length=cfg.data.max_length,
     )
 
+    collator = DynamicPaddingCollator(tokenizer)
     train_loader = DataLoader(
-        train_dataset, batch_size=cfg.training.batch_size, shuffle=True
+        train_dataset,
+        batch_size=cfg.training.batch_size,
+        shuffle=True,
+        collate_fn=collator,
     )
-    val_loader = DataLoader(val_dataset, batch_size=cfg.training.batch_size)
+    val_loader = DataLoader(
+        val_dataset, batch_size=cfg.training.batch_size, collate_fn=collator
+    )
 
     model = MyModelV2(
         vocab_size=tokenizer.vocab_size,
@@ -59,6 +71,8 @@ def train_mymodelv2():
         num_heads=cfg.mymodelv2_params.num_heads,
         num_layers=cfg.mymodelv2_params.num_layers,
         num_classes=cfg.mymodelv2_params.num_classes,
+        max_len=cfg.data.max_length,
+        pad_token_id=tokenizer.pad_token_id,
     )
 
     if torch.cuda.device_count() > 1:
@@ -101,7 +115,9 @@ def train_mymodelv2():
         optimizer, T_max=cfg.training.mymodel_epochs, eta_min=1e-6
     )
 
-    save_dir = "models/mymodelv2_classification"
+    save_dir = cfg.paths.mymodelv2_dir
+    os.makedirs(save_dir, exist_ok=True)
+
     early_stopping = EarlyStopping(
         patience=3, save_path=os.path.join(save_dir, "model_weights.pth")
     )
@@ -177,11 +193,11 @@ def train_mymodelv2():
 
         early_stopping(avg_val_loss, model)
         if early_stopping.early_stop:
-            print(f"ES на эпохе {epoch + 1}")
+            print(f"Early Stopping сработал на эпохе {epoch + 1}")
             break
 
     tokenizer.save_pretrained(save_dir)
-    print(f"tokenizer successfully saved in {save_dir}")
+    print(f"Tokenizer успешно сохранен в: {save_dir}")
 
     wandb.finish()
 
