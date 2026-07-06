@@ -7,7 +7,7 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = text.lower()
-    text = re.sub(f"<.*?>", " ", text)  # Удаление HTML
+    text = re.sub("<.*?>", " ", text)  # Удаление HTML
     text = re.sub(r"([.,!?\"'()«»“”-])", r" \1 ", text)  # Отделяем пунктуацию пробелами
     return re.sub(r"\s+", " ", text).strip()  # Удаляем лишние пробелы
 
