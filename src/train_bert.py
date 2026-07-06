@@ -28,6 +28,8 @@ def train_bert():
             "early_stopping": True,
             "lr_scheduler": "CosineWarmup",
             "weight_decay": 0.01,
+            "method: positional_encoding": True,
+            "padding": "dynamic",
             **dict(cfg),
         },
     )

@@ -34,6 +34,8 @@ def train_mymodelv2():
             "lr_scheduler": "CosineAnnealingLR",
             "weight_decay": 0.05,
             "dropout": 0.3,
+            "method: positional_encoding": True,
+            "padding": "dynamic",
             **dict(cfg),
         },
     )
